@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Brand colors are injected from the database (Admin → App Settings). */
+:root {
+  --brand: #ff5a1f;
+  --brand-2: #0e8a76;
+  --brand-ink: #ffffff;
+  --brand-soft: color-mix(in srgb, var(--brand) 12%, transparent);
+  --brand-2-soft: color-mix(in srgb, var(--brand-2) 12%, transparent);
+
+  --paper: #f2f1ec;
+  --surface: #ffffff;
+  --raise: #faf9f5;
+  --ink: #131816;
+  --mute: #5d6660;
+  --line: #e2e0d7;
+  --shadow-ink: 20 24 22;
+}
+
+.dark {
+  --paper: #0b0f0e;
+  --surface: #121716;
+  --raise: #18201e;
+  --ink: #ecf1ee;
+  --mute: #8fa098;
+  --line: #232c29;
+  --shadow-ink: 0 0 0;
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-2-soft: var(--brand-2-soft);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raise: var(--raise);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-line: var(--line);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn,
+  .btn-brand,
+  .btn-dark,
+  .btn-outline,
+  .btn-ghost {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full font-semibold transition-all duration-200 select-none disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-brand {
+    @apply bg-brand text-brand-ink hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0;
+    box-shadow: 0 10px 30px -10px var(--brand);
+  }
+  .btn-dark {
+    @apply bg-ink text-paper hover:opacity-90;
+  }
+  .btn-outline {
+    @apply border border-line bg-surface text-ink hover:border-ink dark:hover:border-mute;
+  }
+  .btn-ghost {
+    @apply text-ink hover:bg-raise;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition placeholder:text-mute/70 focus:border-brand focus:ring-2 focus:ring-brand/25;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-bold tracking-wide text-mute uppercase;
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+
+  .chip {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-medium text-ink transition hover:border-brand hover:text-brand;
+  }
+  .chip-on {
+    @apply border-transparent bg-brand text-brand-ink hover:text-brand-ink;
+  }
+
+  .glass {
+    @apply border border-line/60 bg-surface/75 backdrop-blur-xl;
+  }
+
+  .section-kicker {
+    @apply text-xs font-bold tracking-[0.18em] text-brand uppercase;
+  }
+  .section-title {
+    @apply font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl;
+  }
+}
+
+/* ---------- living elements ---------- */
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-14px) rotate(var(--rot, 0deg)); }
+}
+.animate-float { animation: float-y 5.5s ease-in-out infinite; }
+
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee-x 28s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fade-up { animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+  100% { opacity: 1; transform: none; }
+}
+.animate-pop { animation: pop-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+
+@keyframes slide-in-r {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-slide-in { animation: slide-in-r 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.6); opacity: 0.45; }
+}
+.animate-pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@keyframes shimmer-x {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--raise) 25%, var(--line) 50%, var(--raise) 75%);
+  background-size: 800px 100%;
+  animation: shimmer-x 1.4s linear infinite;
+}
+
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.reveal.on { opacity: 1; transform: none; }
+
+/* 3D tilt cards */
+.tilt-scene { perspective: 1000px; }
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.16s ease-out, box-shadow 0.3s ease;
+  will-change: transform;
+}
+.tilt-pop { transform: translateZ(34px); }
+
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* dotted ambient backdrop */
+.dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 14%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.dark .dot-grid {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 1px);
+}
+
+/* thin elegant scrollbar for admin tables */
+.slim-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.slim-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
