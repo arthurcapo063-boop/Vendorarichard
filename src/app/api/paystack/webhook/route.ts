@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { verifyPaystack, paystackEnabled } from "@/lib/paystack";
+import { verifyPaystack, paystackEnabled, paystackSecretKey } from "@/lib/paystack";
 import { processSuccessfulPayment } from "@/lib/payment";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const raw = await req.text().catch(() => "");
 
   /* Verify the Paystack signature to reject forged webhooks. */
-  const secret = process.env.PAYSTACK_SECRET_KEY;
+  const secret = await paystackSecretKey();
   const signature = req.headers.get("x-paystack-signature");
   if (secret && signature) {
     const expected = crypto.createHmac("sha512", secret).update(raw, "utf8").digest("hex");
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return new Response("OK", { status: 200 });
   }
 
-  if (body.event === "charge.success" && paystackEnabled()) {
+  if (body.event === "charge.success" && (await paystackEnabled())) {
     const reference = body.data?.reference;
     if (reference) {
       const result = await verifyPaystack(reference);

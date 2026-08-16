@@ -40,6 +40,7 @@ const FIELDS: FieldDef[] = [
   { key: "heroSub", label: "Hero subheadline", type: "textarea", section: "Homepage copy" },
   { key: "footerBlurb", label: "Footer blurb", type: "textarea", section: "Homepage copy" },
   { key: "showSoldOut", label: "Show sold-out items in the storefront", type: "toggle", section: "Storefront behaviour", hint: "Off = sold-out products are automatically hidden from listings." },
+  { key: "paymentMode", label: "Paystack mode", type: "select", options: [{ value: "test", label: "Test (sandbox)" }, { value: "live", label: "Live (real money)" }], section: "Paystack payments", hint: "Which key pair the store uses at runtime. Test uses PAYSTACK_TEST_* keys, Live uses PAYSTACK_LIVE_* keys. Switch at any time — the whole site follows instantly." },
   { key: "subaccountType", label: "Subaccount type", type: "select", options: [{ value: "personal", label: "Personal" }, { value: "business", label: "Business" }], section: "Paystack split payments (3% / 97%)", hint: "Whether the settlement account is a personal or business account." },
   { key: "subaccountBankName", label: "Subaccount bank name", section: "Paystack split payments (3% / 97%)", hint: "e.g. Access Bank. Resolved to a Paystack bank code when you save." },
   { key: "subaccountAccountNumber", label: "Subaccount account number", section: "Paystack split payments (3% / 97%)", hint: "Verified against the bank on save." },
@@ -48,7 +49,7 @@ const FIELDS: FieldDef[] = [
   { key: "processingFeePercent", label: "Processing fee percent", type: "text", section: "Paystack split payments (3% / 97%)", hint: "e.g. 3 — shown to customers at checkout." },
 ];
 
-const SECTIONS = ["Branding", "Contact & WhatsApp", "Social links", "Homepage copy", "Storefront behaviour", "Paystack split payments (3% / 97%)"];
+const SECTIONS = ["Branding", "Contact & WhatsApp", "Social links", "Homepage copy", "Storefront behaviour", "Paystack payments", "Paystack split payments (3% / 97%)"];
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
@@ -119,6 +120,13 @@ export default function AdminSettingsPage() {
       {SECTIONS.map((section) => (
         <section key={section} className="card mt-6 p-6">
           <h2 className="font-display font-bold">{section}</h2>
+          {section === "Paystack payments" && (
+            <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm ${String(form.paymentMode) === "live" ? "border-red-400 bg-red-500/10" : "border-brand-2 bg-brand-2-soft"}`}>
+              <span className="h-2 w-2 rounded-full bg-current" />
+              <span className="font-bold">Paystack mode: {String(form.paymentMode) === "live" ? "LIVE — real money" : "TEST — sandbox"}</span>
+              <span className="text-xs text-mute">· Set both test & live keys in your environment (PAYSTACK_TEST_* / PAYSTACK_LIVE_*) and toggle here to switch instantly.</span>
+            </div>
+          )}
           {section === "Paystack split payments (3% / 97%)" && (
             <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
               <p className="font-semibold">Payment processing comes with a charge of {Number(form.processingFeePercent) || 3}%</p>

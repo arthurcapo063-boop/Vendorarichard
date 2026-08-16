@@ -525,7 +525,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
       } else if (!subFieldsFilled && subChanged) {
         throw new HttpError(400, "Fill in the subaccount bank name, account number and account name together.");
       } else if (subChanged) {
-        if (!paystackEnabled()) {
+        if (!(await paystackEnabled())) {
           /* Demo mode: we can't create a real subaccount, so clear any stale code. */
           subCode = "";
           subBankCode = "";
@@ -576,6 +576,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
           youtube: str("youtube", s.youtube),
           linkedin: str("linkedin", s.linkedin),
           showSoldOut: Boolean(body.showSoldOut),
+          paymentMode: body.paymentMode === "live" ? "live" : "test",
           subaccountType: subType,
           subaccountBankName: subBankName,
           subaccountBankCode: subBankCode,

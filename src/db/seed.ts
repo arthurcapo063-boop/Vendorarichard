@@ -554,6 +554,7 @@ async function main() {
     linkedin: "",
     showSoldOut: true,
     flashSaleEndsAt: new Date(Date.now() + 1000 * 60 * 60 * 26),
+    paymentMode: "test",
     subaccountType: "personal",
     subaccountBankName: "",
     subaccountBankCode: "",

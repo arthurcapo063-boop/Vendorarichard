@@ -111,8 +111,8 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
           body: JSON.stringify({ items: payloadItems, promoCode: promo, payWith, customer: form }),
         }
       );
-      clear();
       if (d.paidWithWallet) {
+        clear();
         router.push(d.redirectUrl);
         return;
       }
@@ -121,6 +121,7 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
       if (d.popup) {
         await openPaystackPopup(d.popup, {
           onSuccess: (ref) => {
+            clear();
             window.location.href = `/api/paystack/callback?reference=${encodeURIComponent(ref)}`;
           },
           onClose: () => {
@@ -130,8 +131,13 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
         });
         return;
       }
-      if (d.redirectUrl.startsWith("http")) window.location.href = d.redirectUrl;
-      else router.push(d.redirectUrl);
+      if (d.redirectUrl.startsWith("http")) {
+        clear();
+        window.location.href = d.redirectUrl;
+      } else {
+        clear();
+        router.push(d.redirectUrl);
+      }
     } catch (e) {
       toast((e as Error).message, "err");
     } finally {

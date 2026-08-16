@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       return json({
         orderNumber: order.orderNumber,
         paidWithWallet: true,
-        demo: !paystackEnabled(),
+        demo: !(await paystackEnabled()),
         redirectUrl: `/checkout/success?order=${order.orderNumber}`,
       });
     }

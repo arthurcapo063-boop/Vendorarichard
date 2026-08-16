@@ -56,6 +56,10 @@ export const settings = pgTable("settings", {
   linkedin: text("linkedin").notNull().default(""),
   showSoldOut: boolean("show_sold_out").notNull().default(true),
   flashSaleEndsAt: timestamp("flash_sale_ends_at"),
+  /* Active Paystack mode: which key pair the store uses at runtime. Toggle from
+     the Admin Panel → App Settings. "test" uses PAYSTACK_TEST_* keys, "live"
+     uses PAYSTACK_LIVE_*. */
+  paymentMode: text("payment_mode").notNull().default("test"),
   /* Paystack split-payment subaccount (admin-configured). Earnings route to this
      subaccount automatically at settlement: 3% stays in the main account (the
      owner) and 97% goes to the subaccount (see PAYSTACK_SUBACCOUNT_PERCENTAGE). */
