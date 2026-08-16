@@ -150,7 +150,9 @@ The store can automatically split every Paystack payment so the bulk of each sal
 - The split is controlled by `PAYSTACK_SUBACCOUNT_PERCENTAGE` (default `3`, i.e. the % that stays in your main account). Set it to `0` to send 100% to the subaccount, or any value `0–100`.
 - The subaccount code is stored in the database (`settings.subaccount_code`) and managed from the Admin Panel — you don't need to touch any env var for daily use beyond `PAYSTACK_SECRET_KEY`.
 - If `PAYSTACK_SECRET_KEY` is missing (demo mode) the subaccount can't be created; the admin form still lets you stage the details and clears any stale subaccount code.
-- New settings columns: `subaccount_type`, `subaccount_bank_name`, `subaccount_bank_code`, `subaccount_account_number`, `subaccount_account_name`, `subaccount_code`. Run `npx drizzle-kit push` after pulling this change so the new columns exist.
+- New settings columns: `subaccount_type`, `subaccount_bank_name`, `subaccount_bank_code`, `subaccount_account_number`, `subaccount_account_name`, `subaccount_code`. Sync them with your database **before** deploying:
+  - Run `npx drizzle-kit push` (requires DB access from your machine), **or**
+  - Apply `migrations/0001_subaccount_split.sql` (Supabase → SQL Editor / `psql`) if you can't reach the DB directly. This is additive and safe.
 
 **Requirements**
 
