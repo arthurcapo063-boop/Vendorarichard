@@ -37,7 +37,7 @@ export const settings = pgTable("settings", {
   logoUrl: text("logo_url").notNull().default(""),
   primaryColor: text("primary_color").notNull().default("#FF5A1F"),
   secondaryColor: text("secondary_color").notNull().default("#0E8A76"),
-  currency: text("currency").notNull().default("NGN"),
+  currency: text("currency").notNull().default("GHS"),
   whatsappNumber: text("whatsapp_number").notNull().default("2348012345678"),
   contactEmail: text("contact_email").notNull().default("hello@vendora.shop"),
   contactPhone: text("contact_phone").notNull().default("+234 801 234 5678"),

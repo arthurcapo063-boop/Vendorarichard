@@ -9,7 +9,7 @@ export function num(v: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function money(v: number | string | null | undefined, currency = "NGN"): string {
+export function money(v: number | string | null | undefined, currency = "GHS"): string {
   const n = num(v);
   try {
     return new Intl.NumberFormat("en-NG", {

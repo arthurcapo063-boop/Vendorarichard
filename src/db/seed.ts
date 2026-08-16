@@ -532,7 +532,7 @@ async function main() {
     logoUrl: "",
     primaryColor: "#FF5A1F",
     secondaryColor: "#0E8A76",
-    currency: "NGN",
+    currency: "GHS",
     whatsappNumber: "2348012345678",
     contactEmail: "hello@vendora.shop",
     contactPhone: "+234 801 234 5678",

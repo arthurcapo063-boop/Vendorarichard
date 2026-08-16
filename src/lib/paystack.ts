@@ -46,7 +46,7 @@ export async function initPaystack(opts: {
     body: JSON.stringify({
       email: opts.email,
       amount: amountKobo,
-      currency: "NGN",
+      currency: "GHS",
       callback_url: callbackUrl,
       metadata: { type: opts.type, targetId: opts.targetId, amountKobo },
     }),
