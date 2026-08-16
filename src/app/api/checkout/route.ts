@@ -63,6 +63,7 @@ export async function POST(req: Request) {
         subtotal: String(quote.subtotal),
         feesTotal: String(quote.feesTotal),
         discount: String(quote.discount),
+        processingFee: String(quote.processingFee),
         total: String(quote.total),
         promoCode: quote.promoCode,
         paymentMethod: payWith,
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
       if (num(user.walletBalance) < quote.total) {
         throw new HttpError(
           402,
-          `Your wallet balance (₦${num(user.walletBalance).toLocaleString()}) can't cover ₦${quote.total.toLocaleString()}. Top up or pay with Paystack.`
+          `Your wallet balance (GH₵${num(user.walletBalance).toLocaleString()}) can't cover GH₵${quote.total.toLocaleString()}. Top up or pay with Paystack.`
         );
       }
       await db

@@ -44,6 +44,8 @@ const FIELDS: FieldDef[] = [
   { key: "subaccountBankName", label: "Subaccount bank name", section: "Paystack split payments (3% / 97%)", hint: "e.g. Access Bank. Resolved to a Paystack bank code when you save." },
   { key: "subaccountAccountNumber", label: "Subaccount account number", section: "Paystack split payments (3% / 97%)", hint: "Verified against the bank on save." },
   { key: "subaccountAccountName", label: "Subaccount account name", section: "Paystack split payments (3% / 97%)", hint: "Must match the name the bank has on file for this account." },
+  { key: "chargeProcessingFee", label: "Add processing fee to customer checkout", type: "toggle", section: "Paystack split payments (3% / 97%)", hint: "On = the processing charge below is added to the customer's total at checkout. Off = you absorb it (customers pay the subtotal)." },
+  { key: "processingFeePercent", label: "Processing fee percent", type: "text", section: "Paystack split payments (3% / 97%)", hint: "e.g. 3 — shown to customers at checkout." },
 ];
 
 const SECTIONS = ["Branding", "Contact & WhatsApp", "Social links", "Homepage copy", "Storefront behaviour", "Paystack split payments (3% / 97%)"];
@@ -117,6 +119,12 @@ export default function AdminSettingsPage() {
       {SECTIONS.map((section) => (
         <section key={section} className="card mt-6 p-6">
           <h2 className="font-display font-bold">{section}</h2>
+          {section === "Paystack split payments (3% / 97%)" && (
+            <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-3 text-sm">
+              <p className="font-semibold">Payment processing comes with a charge of {Number(form.processingFeePercent) || 3}%</p>
+              <p className="mt-0.5 text-xs text-mute">97% of each sale settles to the subaccount; 3% stays in your main account.</p>
+            </div>
+          )}
           {section === "Paystack split payments (3% / 97%)" && (
             <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm ${form.subaccountCode ? "border-brand-2 bg-brand-2-soft" : "border-line bg-surface"}`}>
               {form.subaccountCode ? (

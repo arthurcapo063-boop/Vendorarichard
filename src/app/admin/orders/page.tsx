@@ -30,6 +30,7 @@ interface AdminOrder {
   subtotal: number;
   feesTotal: number;
   discount: number;
+  processingFee: number;
   total: number;
   promoCode: string | null;
   paymentMethod: string;
@@ -177,6 +178,7 @@ export default function AdminOrdersPage() {
                 <div className="flex justify-between text-mute"><dt>Subtotal</dt><dd className="font-semibold text-ink">{money(detail.subtotal, currency)}</dd></div>
                 <div className="flex justify-between text-mute"><dt>Custom fees</dt><dd className="font-semibold text-ink">{money(detail.feesTotal, currency)}</dd></div>
                 <div className="flex justify-between text-mute"><dt>Discount {detail.promoCode && `(${detail.promoCode})`}</dt><dd className="font-semibold text-brand-2">−{money(detail.discount, currency)}</dd></div>
+                <div className="flex justify-between text-mute"><dt>Processing fee</dt><dd className="font-semibold text-ink">{detail.processingFee > 0 ? money(detail.processingFee, currency) : "—"}</dd></div>
                 <div className="flex justify-between text-base font-bold"><dt>Total</dt><dd className="font-display text-brand">{money(detail.total, currency)}</dd></div>
               </dl>
             </div>

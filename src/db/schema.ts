@@ -65,6 +65,10 @@ export const settings = pgTable("settings", {
   subaccountAccountNumber: text("subaccount_account_number").notNull().default(""),
   subaccountAccountName: text("subaccount_account_name").notNull().default(""),
   subaccountCode: text("subaccount_code").notNull().default(""),
+  /* Processing-charge pass-through: when enabled, a processing fee (default 3%)
+     is added to the customer's checkout total. Off = the platform absorbs it. */
+  chargeProcessingFee: boolean("charge_processing_fee").notNull().default(true),
+  processingFeePercent: numeric("processing_fee_percent", { precision: 5, scale: 2 }).notNull().default("3"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -207,6 +211,7 @@ export const orders = pgTable("orders", {
   subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
   feesTotal: numeric("fees_total", { precision: 12, scale: 2 }).notNull().default("0"),
   discount: numeric("discount", { precision: 12, scale: 2 }).notNull().default("0"),
+  processingFee: numeric("processing_fee", { precision: 12, scale: 2 }).notNull().default("0"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
   promoCode: text("promo_code"),
   paymentMethod: payMethodEnum("payment_method").notNull().default("paystack"),

@@ -560,6 +560,8 @@ async function main() {
     subaccountAccountNumber: "",
     subaccountAccountName: "",
     subaccountCode: "",
+    chargeProcessingFee: true,
+    processingFeePercent: "3",
   });
 
   /* Users */

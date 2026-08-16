@@ -10,8 +10,8 @@ export async function POST(req: Request) {
     const user = await requireUser();
     const body = await req.json().catch(() => ({}));
     const amount = Math.floor(num(body.amount));
-    if (amount < 500) throw new HttpError(400, "Minimum top-up is ₦500.");
-    if (amount > 10_000_000) throw new HttpError(400, "Maximum top-up is ₦10,000,000.");
+    if (amount < 500) throw new HttpError(400, "Minimum top-up is GH₵500.");
+    if (amount > 10_000_000) throw new HttpError(400, "Maximum top-up is GH₵10,000,000.");
 
     const h = await headers();
     const origin =

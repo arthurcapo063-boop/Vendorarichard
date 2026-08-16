@@ -9,6 +9,19 @@ export function num(v: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export function currencySymbol(currency = "GHS"): string {
+  switch ((currency || "").toUpperCase()) {
+    case "GHS":
+      return "GH₵";
+    case "NGN":
+      return "₦";
+    case "USD":
+      return "$";
+    default:
+      return "GH₵";
+  }
+}
+
 export function money(v: number | string | null | undefined, currency = "GHS"): string {
   const n = num(v);
   try {
@@ -19,7 +32,7 @@ export function money(v: number | string | null | undefined, currency = "GHS"): 
       maximumFractionDigits: 2,
     }).format(n);
   } catch {
-    return `₦${n.toLocaleString()}`;
+    return `GH₵${n.toLocaleString()}`;
   }
 }
 

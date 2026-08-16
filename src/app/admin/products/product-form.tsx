@@ -1,11 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/client";
+import { currencySymbol } from "@/lib/utils";
 import { useToast } from "@/components/providers";
 import { Spinner } from "@/components/ui";
-import { IPlus, ITrash } from "@/components/icons";
+import { IPlus, ITrash, IUpload } from "@/components/icons";
+
+/** Read a device image, downscale it and return a compressed data-URL string. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1000;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.8));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 interface CategoryOpt {
   id: number;
@@ -41,9 +70,10 @@ export interface ProductFormInitial {
   fees?: { feeName: string; feeAmount: number }[];
 }
 
-export function ProductForm({ categories, initial }: { categories: CategoryOpt[]; initial?: ProductFormInitial }) {
+export function ProductForm({ categories, initial, currency = "GHS" }: { categories: CategoryOpt[]; initial?: ProductFormInitial; currency?: string }) {
   const router = useRouter();
   const { toast } = useToast();
+  const sym = currencySymbol(currency);
   const p = initial?.product;
   const editing = Boolean(p);
 
@@ -67,6 +97,31 @@ export function ProductForm({ categories, initial }: { categories: CategoryOpt[]
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setUploadingImg(true);
+    try {
+      const urls: string[] = [];
+      for (const f of files) {
+        if (!f.type.startsWith("image/")) continue;
+        const dataUrl = await fileToDataUrl(f);
+        if (dataUrl) urls.push(dataUrl);
+      }
+      if (urls.length) {
+        const existing = form.images.trim();
+        setForm({ ...form, images: existing ? `${existing}\n${urls.join("\n")}` : urls.join("\n") });
+      }
+    } catch {
+      /* ignore individual failures */
+    } finally {
+      setUploadingImg(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const save = async () => {
     setError(null);
@@ -132,15 +187,35 @@ export function ProductForm({ categories, initial }: { categories: CategoryOpt[]
               <input id="pf-stock" type="number" min={0} className="input" value={form.stockQty} onChange={(e) => setForm({ ...form, stockQty: e.target.value })} placeholder="e.g. 25 — hits 0 → auto Sold Out" />
             </div>
             <div>
-              <label className="label" htmlFor="pf-base">Default price (₦)</label>
+              <label className="label" htmlFor="pf-base">Default price ({sym})</label>
               <input id="pf-base" type="number" min={0} className="input" value={form.basePrice} onChange={(e) => setForm({ ...form, basePrice: e.target.value })} placeholder="45500" />
             </div>
             <div>
-              <label className="label" htmlFor="pf-sale">Sale price (₦, optional)</label>
+              <label className="label" htmlFor="pf-sale">Sale price ({sym}, optional)</label>
               <input id="pf-sale" type="number" min={0} className="input" value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })} placeholder="32900" />
             </div>
             <div className="sm:col-span-2">
-              <label className="label" htmlFor="pf-imgs">Image URLs <span className="normal-case">(one per line — first is the cover)</span></label>
+              <label className="label" htmlFor="pf-imgs">Product images <span className="normal-case">(one per line — first is the cover)</span></label>
+              <div className="mb-2 flex flex-wrap gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={onFilesSelected}
+                  aria-label="Upload images from device"
+                />
+                <button
+                  type="button"
+                  className="btn-outline px-4 py-2 text-sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImg}
+                >
+                  {uploadingImg ? <Spinner className="h-4 w-4" /> : <IUpload size={15} />} {uploadingImg ? "Uploading…" : "Upload from device"}
+                </button>
+                <span className="self-center text-[11px] text-mute">or paste image URLs below (first line = cover).</span>
+              </div>
               <textarea id="pf-imgs" className="input min-h-24 font-mono text-xs" value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} placeholder={"https://…/photo-1.jpg\nhttps://…/photo-2.jpg"} />
             </div>
             <div className="sm:col-span-2">
@@ -175,7 +250,7 @@ export function ProductForm({ categories, initial }: { categories: CategoryOpt[]
             {fees.map((f, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
                 <input className="input flex-1" placeholder="Fee name (Packaging Fee)" value={f.feeName} onChange={(e) => setFees(fees.map((x, j) => (j === i ? { ...x, feeName: e.target.value } : x)))} />
-                <input className="input w-40" type="number" min={0} placeholder="Fee price (₦)" value={f.feeAmount} onChange={(e) => setFees(fees.map((x, j) => (j === i ? { ...x, feeAmount: e.target.value } : x)))} />
+                <input className="input w-40" type="number" min={0} placeholder={`Fee price (${sym})`} value={f.feeAmount} onChange={(e) => setFees(fees.map((x, j) => (j === i ? { ...x, feeAmount: e.target.value } : x)))} />
                 <button type="button" className="btn-outline h-10 w-10 shrink-0 rounded-full hover:border-red-500 hover:text-red-500" onClick={() => setFees(fees.filter((_, j) => j !== i))} aria-label="Remove fee"><ITrash size={14} /></button>
               </div>
             ))}

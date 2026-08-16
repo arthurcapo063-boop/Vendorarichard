@@ -14,6 +14,9 @@ interface QuoteView {
   subtotal: number;
   feesTotal: number;
   discount: number;
+  processingFee: number;
+  processingFeePercent: number;
+  chargeProcessingFee: boolean;
   total: number;
   promoCode: string | null;
   promoError: string | null;
@@ -249,6 +252,12 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
                   {q ? (q.discount > 0 ? `−${money(q.discount, currency)}` : money(0, currency)) : "…"}
                 </dd>
               </div>
+              {q?.chargeProcessingFee && (
+                <div className="flex justify-between text-mute">
+                  <dt>Processing fee ({q.processingFeePercent}%)</dt>
+                  <dd className="font-semibold text-ink">{q ? money(q.processingFee, currency) : "…"}</dd>
+                </div>
+              )}
               <div className="flex justify-between border-t border-line pt-3 text-base font-bold">
                 <dt>Total due</dt>
                 <dd className="font-display text-xl text-brand">{q ? money(q.total, currency) : "…"}</dd>

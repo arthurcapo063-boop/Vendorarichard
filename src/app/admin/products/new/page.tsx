@@ -6,10 +6,17 @@ import { ProductForm } from "../product-form";
 
 export default function NewProductPage() {
   const [cats, setCats] = useState<{ id: number; name: string }[] | null>(null);
+  const [currency, setCurrency] = useState("GHS");
 
   useEffect(() => {
-    api<{ categories: { id: number; name: string }[] }>("/api/admin/categories")
-      .then((d) => setCats(d.categories))
+    Promise.all([
+      api<{ categories: { id: number; name: string }[] }>("/api/admin/categories"),
+      api<{ settings: { currency: string } }>("/api/admin/settings"),
+    ])
+      .then(([c, s]) => {
+        setCats(c.categories);
+        setCurrency(s.settings.currency);
+      })
       .catch(() => setCats([]));
   }, []);
 
@@ -24,7 +31,7 @@ export default function NewProductPage() {
             <div className="skeleton h-40 rounded-2xl" />
           </div>
         ) : (
-          <ProductForm categories={cats} />
+          <ProductForm categories={cats} currency={currency} />
         )}
       </div>
     </div>
