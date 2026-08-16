@@ -5,20 +5,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { computeQuote, decrementStock, markPromoUsed, type CartLineInput } from "@/lib/pricing";
 import { initPaystack, paystackEnabled } from "@/lib/paystack";
 import { err, json, HttpError, num, orderNumber } from "@/lib/utils";
-import { headers } from "next/headers";
+import { resolveSiteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
-
-/** Public origin for redirect URLs: browser Origin → proxy-aware Host → request URL. */
-async function resolveOrigin(req: Request): Promise<string> {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const h = await headers();
-  const origin = h.get("origin");
-  if (origin) return origin;
-  const host = h.get("host");
-  if (host) return `${h.get("x-forwarded-proto") ?? "http"}://${host}`;
-  return new URL(req.url).origin;
-}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -102,7 +91,7 @@ export async function POST(req: Request) {
     }
 
     /* ---------- Paystack payment ---------- */
-    const origin = await resolveOrigin(req);
+    const origin = await resolveSiteOrigin();
     const init = await initPaystack({
       email: customer.email,
       amountNaira: quote.total,
