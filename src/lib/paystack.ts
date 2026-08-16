@@ -19,6 +19,10 @@ export function paystackEnabled(): boolean {
   return Boolean(process.env.PAYSTACK_SECRET_KEY);
 }
 
+export function paystackPublicKey(): string {
+  return (process.env.PAYSTACK_PUBLIC_KEY ?? "").trim();
+}
+
 /** Percentage of each payment that stays in the main (owner) account. The rest
  *  (100 − this) goes to the configured subaccount. Default 3 ⇒ 97% to sub. */
 export function paystackPercentage(): number {
@@ -109,6 +113,14 @@ export interface InitResult {
   reference: string;
   authorizationUrl: string;
   demo: boolean;
+  popup: {
+    key: string;
+    email: string;
+    amountKobo: number;
+    reference: string;
+    currency: string;
+    subaccount: string;
+  } | null;
 }
 
 export async function initPaystack(opts: {
@@ -128,6 +140,7 @@ export async function initPaystack(opts: {
       reference,
       authorizationUrl: `${callbackUrl}?reference=${encodeURIComponent(reference)}`,
       demo: true,
+      popup: null,
     };
   }
 
@@ -151,10 +164,22 @@ export async function initPaystack(opts: {
   if (!res.ok || data.status !== true) {
     throw new Error(data.message || "Paystack failed to initialize the transaction.");
   }
+  const reference = data.data.reference as string;
+  const key = paystackPublicKey();
   return {
-    reference: data.data.reference as string,
+    reference,
     authorizationUrl: data.data.authorization_url as string,
     demo: false,
+    popup: key
+      ? {
+          key,
+          email: opts.email,
+          amountKobo,
+          reference,
+          currency: "GHS",
+          subaccount,
+        }
+      : null,
   };
 }
 

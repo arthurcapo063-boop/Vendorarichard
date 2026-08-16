@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       origin,
     });
 
-    return json({ redirectUrl: init.authorizationUrl, demo: init.demo });
+    return json({ redirectUrl: init.authorizationUrl, demo: init.demo, popup: init.popup });
   } catch (e) {
     return err(e);
   }

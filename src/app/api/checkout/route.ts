@@ -109,6 +109,7 @@ export async function POST(req: Request) {
       orderNumber: order.orderNumber,
       redirectUrl: init.authorizationUrl,
       demo: init.demo,
+      popup: init.popup,
     });
   } catch (e) {
     return err(e);

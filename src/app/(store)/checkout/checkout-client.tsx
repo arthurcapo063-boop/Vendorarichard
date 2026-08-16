@@ -9,6 +9,7 @@ import { useCart, useToast } from "@/components/providers";
 import { EmptyState, Spinner } from "@/components/ui";
 import { ICart, IShield, IWallet, IWhatsApp, ITag } from "@/components/icons";
 import { waLink } from "@/lib/client";
+import { openPaystackPopup, type PaystackPopupConfig } from "@/lib/paystack-popup";
 
 interface QuoteView {
   subtotal: number;
@@ -103,7 +104,7 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
   const placeOrder = async () => {
     setPlacing(true);
     try {
-      const d = await api<{ redirectUrl: string; paidWithWallet?: boolean }>(
+      const d = await api<{ redirectUrl: string; paidWithWallet?: boolean; popup?: PaystackPopupConfig | null }>(
         "/api/checkout",
         {
           method: "POST",
@@ -111,6 +112,24 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
         }
       );
       clear();
+      if (d.paidWithWallet) {
+        router.push(d.redirectUrl);
+        return;
+      }
+      /* Real payments open the Paystack inline popup — onSuccess fires in the
+         browser immediately, so the customer always lands back on the site. */
+      if (d.popup) {
+        await openPaystackPopup(d.popup, {
+          onSuccess: (ref) => {
+            window.location.href = `/api/paystack/callback?reference=${encodeURIComponent(ref)}`;
+          },
+          onClose: () => {
+            toast("Payment window closed — no charge was made.", "err");
+            setPlacing(false);
+          },
+        });
+        return;
+      }
       if (d.redirectUrl.startsWith("http")) window.location.href = d.redirectUrl;
       else router.push(d.redirectUrl);
     } catch (e) {

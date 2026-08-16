@@ -69,6 +69,7 @@ Create a `.env` file at the project root:
 | --- | --- | --- |
 | `DATABASE_URL` | ✅ | PostgreSQL connection string, e.g. `postgresql://postgres:postgres@127.0.0.1:5432/app_db` |
 | `PAYSTACK_SECRET_KEY` | ⚠️ optional | Your Paystack **secret** key (`sk_live_…` / `sk_test_…`). Used server-side to initialize & verify transactions. **If omitted, the app runs in demo mode** (payments are simulated locally) and the subaccount can't be created. |
+| `PAYSTACK_PUBLIC_KEY` | ⚠️ recommended | Your Paystack **public** key (`pk_live_…` / `pk_test_…`). Enables the **inline checkout popup** so the customer is returned to the site immediately on success. If empty, the app falls back to the hosted Paystack page (which relies on a redirect back). |
 | `PAYSTACK_SUBACCOUNT_PERCENTAGE` | optional | Percentage of each Paystack payment that stays in **your** main account; the rest settles to the configured subaccount. Default `3` ⇒ 3% to you, 97% to the subaccount. |
 | `NEXT_PUBLIC_SITE_URL` | ✅ recommended | **Your public origin, e.g. `https://shop.example.com`** (no trailing slash). This is the base of the Paystack `callback_url` that brings customers back to your site after paying. **Set this to your production domain** — if it's empty, the callback URL is guessed from request headers and may be wrong, leaving customers stuck on Paystack's success page. |
 
@@ -128,9 +129,9 @@ npm run build && npm start
 ### Paystack go-live checklist
 
 1. Create an account at [paystack.com](https://paystack.com) → Settings → Preferences → International Cards (optional).
-2. Copy the **test** key first (`sk_test_…`) into `PAYSTACK_SECRET_KEY` and run a full purchase + wallet top-up.
-3. Switch to the **live** key (`sk_live_…`). Callback URL is automatic: `https://<your-domain>/api/paystack/callback`.
-4. **(Recommended)** In Paystack → Settings → API Keys & Webhooks → **Webhook URL**, set `https://<your-domain>/api/paystack/webhook` and pick the **`charge.success`** event. This makes payment verification reliable even if a customer closes the Paystack tab before being redirected back.
+2. Copy the **test** keys (`sk_test_…` and `pk_test_…`) into `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY`, set `NEXT_PUBLIC_SITE_URL` to your domain, and run a full purchase + wallet top-up. With the public key set, the **inline checkout popup** opens on your site and returns the customer to the site immediately on success.
+3. Switch to the **live** keys (`sk_live_…`, `pk_live_…`). Callback URL is automatic: `https://<your-domain>/api/paystack/callback`.
+4. **(Recommended)** In Paystack → Settings → API Keys & Webhooks → **Webhook URL**, set `https://<your-domain>/api/paystack/webhook` and pick the **`charge.success`** event. This makes payment verification reliable even if a customer closes the checkout before the success callback fires.
 
 ### Split payments with a subaccount (3% / 97%)
 

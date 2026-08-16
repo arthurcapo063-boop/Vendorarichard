@@ -9,6 +9,7 @@ import type { OrderStatus } from "@/lib/types";
 import { useToast } from "@/components/providers";
 import { StatusPill, Spinner, EmptyState, Modal } from "@/components/ui";
 import { IInbox, IWallet, IArrowR, IPencil, IChevR } from "@/components/icons";
+import { openPaystackPopup, type PaystackPopupConfig } from "@/lib/paystack-popup";
 
 interface Me {
   id: number;
@@ -109,10 +110,22 @@ export function AccountClient({ currency, siteName }: { currency: string; siteNa
   const fundWallet = async () => {
     setFunding(true);
     try {
-      const d = await api<{ redirectUrl: string }>("/api/wallet/fund", {
+      const d = await api<{ redirectUrl: string; popup?: PaystackPopupConfig | null }>("/api/wallet/fund", {
         method: "POST",
         body: JSON.stringify({ amount: topUp }),
       });
+      if (d.popup) {
+        await openPaystackPopup(d.popup, {
+          onSuccess: (ref) => {
+            window.location.href = `/api/paystack/callback?reference=${encodeURIComponent(ref)}`;
+          },
+          onClose: () => {
+            toast("Top-up window closed — no charge was made.", "err");
+            setFunding(false);
+          },
+        });
+        return;
+      }
       if (d.redirectUrl.startsWith("http")) window.location.href = d.redirectUrl;
       else router.push(d.redirectUrl);
     } catch (e) {
