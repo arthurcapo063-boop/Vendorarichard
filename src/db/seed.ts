@@ -554,6 +554,12 @@ async function main() {
     linkedin: "",
     showSoldOut: true,
     flashSaleEndsAt: new Date(Date.now() + 1000 * 60 * 60 * 26),
+    subaccountType: "personal",
+    subaccountBankName: "",
+    subaccountBankCode: "",
+    subaccountAccountNumber: "",
+    subaccountAccountName: "",
+    subaccountCode: "",
   });
 
   /* Users */

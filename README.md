@@ -19,7 +19,8 @@ A highly dynamic, admin-driven e-commerce platform built with **Next.js 16 (App 
 │  Next.js API layer                                                                             │
 │  • Server-side price engine (src/lib/pricing.ts) — the ONLY source of truth for totals         │
 │  • Session auth (scrypt-hashed passwords, httpOnly cookie sessions)                            │
-│  • Paystack gateway (src/lib/paystack.ts) — init + verify; demo mode when no key is set        │
+│  • Paystack gateway (src/lib/paystack.ts) — init + verify + subaccount split; demo mode when     │
+│    no key is set. Subaccount synced from Admin → App Settings                                      │
 │  • Admin API: /api/admin/[section] — products, categories, orders, users, notifications,       │
 │    promos, settings, wallet adjustments, stats                                                 │
 └──────────────────────────────────────┬─────────────────────────────────────────────────────────┘
@@ -37,6 +38,7 @@ A highly dynamic, admin-driven e-commerce platform built with **Next.js 16 (App 
 - **Inventory** — optional stock quantity; hitting `0` auto-labels the product **Sold Out**. The admin toggle `showSoldOut` decides whether sold-out items stay visible or are hidden store-wide.
 - **Cart & Checkout** — cart lives in `localStorage`; totals are always recomputed server-side (`POST /api/cart/quote`). Guest checkout is allowed but **strictly requires** a WhatsApp number + delivery address. Promo codes are validated server-side (active, expiry, usage limit, min subtotal).
 - **Payments** — Paystack for checkout and wallet top-ups. Without `PAYSTACK_SECRET_KEY` the app runs in **demo mode**: references prefixed `demo-` are auto-approved by the callback so the full flow remains testable.
+- **Split payments (subaccount)** — when a settlement subaccount is configured in the Admin Panel, every Paystack payment is split automatically: a configurable share (default **3%**) stays in your main account and the rest (default **97%**) settles directly to the subaccount's bank account. The subaccount is created/updated on Paystack from the admin form (bank name, account number, account name, type).
 - **Wallet** — in-app store credit only (purchases, never withdrawable). Top up via Paystack; every credit/debit writes a `wallet_transactions` record; payments are idempotent per Paystack reference.
 - **Orders** — snapshot items (name, qty, unit price, chosen attributes, per-line fees) so history survives catalog edits. Statuses: `pending → processing → completed` (+ `cancelled`, which restocks paid items).
 - **Notifications** — announcement bell on the navbar. Admin can target **All Visitors**, **Logged-In Users Only**, or **one specific user**.
@@ -65,7 +67,8 @@ Create a `.env` file at the project root:
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | ✅ | PostgreSQL connection string, e.g. `postgresql://postgres:postgres@127.0.0.1:5432/app_db` |
-| `PAYSTACK_SECRET_KEY` | ⚠️ optional | Your Paystack **secret** key (`sk_live_…` / `sk_test_…`). Used server-side to initialize & verify transactions. **If omitted, the app runs in demo mode** (payments are simulated locally). |
+| `PAYSTACK_SECRET_KEY` | ⚠️ optional | Your Paystack **secret** key (`sk_live_…` / `sk_test_…`). Used server-side to initialize & verify transactions. **If omitted, the app runs in demo mode** (payments are simulated locally) and the subaccount can't be created. |
+| `PAYSTACK_SUBACCOUNT_PERCENTAGE` | optional | Percentage of each Paystack payment that stays in **your** main account; the rest settles to the configured subaccount. Default `3` ⇒ 3% to you, 97% to the subaccount. |
 | `NEXT_PUBLIC_SITE_URL` | optional | Public origin used for Paystack `callback_url` when the request has no `Origin`/`Host` header (e.g. `https://shop.example.com`). |
 
 No other variables are needed. Session tokens are random per-install (no shared secret required); passwords are hashed with Node's `scrypt`.
@@ -127,6 +130,32 @@ npm run build && npm start
 2. Copy the **test** key first (`sk_test_…`) into `PAYSTACK_SECRET_KEY` and run a full purchase + wallet top-up.
 3. Switch to the **live** key (`sk_live_…`). Callback URL is automatic: `https://<your-domain>/api/paystack/callback`.
 
+### Split payments with a subaccount (3% / 97%)
+
+The store can automatically split every Paystack payment so the bulk of each sale settles straight to a subaccount's bank account, while a small commission stays in your main account.
+
+**How it works**
+
+1. Go to **Admin → App Settings → "Paystack split payments (3% / 97%)"**.
+2. Enter the settlement subaccount details:
+   - **Subaccount type** — `personal` or `business`.
+   - **Bank name** — e.g. `Access Bank`. It is resolved to a Paystack bank code automatically (GHS).
+   - **Account number** — verified against the bank on save.
+   - **Account name** — must match the name the bank has on file (Paystack cross-checks it).
+3. Hit **Save**. The app creates the Paystack subaccount (or updates the existing one) and stores its `subaccount_code` in the database.
+4. Every subsequent Paystack checkout / wallet top-up initializes with `subaccount`, so Paystack settles **97%** to the subaccount and leaves **3%** in your main account at settlement.
+
+**Configuration**
+
+- The split is controlled by `PAYSTACK_SUBACCOUNT_PERCENTAGE` (default `3`, i.e. the % that stays in your main account). Set it to `0` to send 100% to the subaccount, or any value `0–100`.
+- The subaccount code is stored in the database (`settings.subaccount_code`) and managed from the Admin Panel — you don't need to touch any env var for daily use beyond `PAYSTACK_SECRET_KEY`.
+- If `PAYSTACK_SECRET_KEY` is missing (demo mode) the subaccount can't be created; the admin form still lets you stage the details and clears any stale subaccount code.
+- New settings columns: `subaccount_type`, `subaccount_bank_name`, `subaccount_bank_code`, `subaccount_account_number`, `subaccount_account_name`, `subaccount_code`. Run `npx drizzle-kit push` after pulling this change so the new columns exist.
+
+**Requirements**
+
+- The main account and the subaccount must be under the same Paystack integration. The subaccount's bank must be a Ghanaian settlement bank, and the account owner must complete Paystack KYC before payouts are released.
+
 ---
 
 ## 6. Routes Map
@@ -150,7 +179,7 @@ npm run build && npm start
 | `/admin/users` | CRM: users, roles, wallet balances, order counts, manual wallet credit/debit |
 | `/admin/notifications` | Announcements composer with audience targeting (all / logged-in / specific user) |
 | `/admin/promos` | Promo code CRUD (percent/fixed, min subtotal, usage limits, expiry) |
-| `/admin/settings` | Global app settings: branding, colors, WhatsApp, socials, contact copy, hero text, sold-out visibility |
+| `/admin/settings` | Global app settings: branding, colors, WhatsApp, socials, contact copy, hero text, sold-out visibility, and the Paystack split-payment subaccount |
 
 ### API endpoints
 

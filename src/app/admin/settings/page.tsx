@@ -8,7 +8,16 @@ import { ISettings, ICheck } from "@/components/icons";
 
 type SettingsForm = Record<string, string | boolean>;
 
-const FIELDS: { key: string; label: string; type?: "text" | "textarea" | "color" | "toggle"; hint?: string; section: string }[] = [
+type FieldDef = {
+  key: string;
+  label: string;
+  type?: "text" | "textarea" | "color" | "toggle" | "select";
+  hint?: string;
+  section: string;
+  options?: { value: string; label: string }[];
+};
+
+const FIELDS: FieldDef[] = [
   { key: "siteName", label: "Website name", section: "Branding", hint: "Shown in the navbar, footer and browser tab." },
   { key: "tagline", label: "Tagline", section: "Branding" },
   { key: "logoUrl", label: "Logo URL", section: "Branding", hint: "Leave blank to use the built-in mark. Square images work best." },
@@ -31,9 +40,13 @@ const FIELDS: { key: string; label: string; type?: "text" | "textarea" | "color"
   { key: "heroSub", label: "Hero subheadline", type: "textarea", section: "Homepage copy" },
   { key: "footerBlurb", label: "Footer blurb", type: "textarea", section: "Homepage copy" },
   { key: "showSoldOut", label: "Show sold-out items in the storefront", type: "toggle", section: "Storefront behaviour", hint: "Off = sold-out products are automatically hidden from listings." },
+  { key: "subaccountType", label: "Subaccount type", type: "select", options: [{ value: "personal", label: "Personal" }, { value: "business", label: "Business" }], section: "Paystack split payments (3% / 97%)", hint: "Whether the settlement account is a personal or business account." },
+  { key: "subaccountBankName", label: "Subaccount bank name", section: "Paystack split payments (3% / 97%)", hint: "e.g. Access Bank. Resolved to a Paystack bank code when you save." },
+  { key: "subaccountAccountNumber", label: "Subaccount account number", section: "Paystack split payments (3% / 97%)", hint: "Verified against the bank on save." },
+  { key: "subaccountAccountName", label: "Subaccount account name", section: "Paystack split payments (3% / 97%)", hint: "Must match the name the bank has on file for this account." },
 ];
 
-const SECTIONS = ["Branding", "Contact & WhatsApp", "Social links", "Homepage copy", "Storefront behaviour"];
+const SECTIONS = ["Branding", "Contact & WhatsApp", "Social links", "Homepage copy", "Storefront behaviour", "Paystack split payments (3% / 97%)"];
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
@@ -104,8 +117,43 @@ export default function AdminSettingsPage() {
       {SECTIONS.map((section) => (
         <section key={section} className="card mt-6 p-6">
           <h2 className="font-display font-bold">{section}</h2>
+          {section === "Paystack split payments (3% / 97%)" && (
+            <div className={`mt-3 flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm ${form.subaccountCode ? "border-brand-2 bg-brand-2-soft" : "border-line bg-surface"}`}>
+              {form.subaccountCode ? (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-brand-2" />
+                  <span className="font-bold">Subaccount connected</span>
+                  <code className="rounded bg-line/40 px-1.5 py-0.5 font-mono text-xs">{String(form.subaccountCode)}</code>
+                  <span className="text-xs text-mute">· 3% stays in your main account, 97% settles here automatically.</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-line" />
+                  <span className="text-xs text-mute">No subaccount connected yet — fill in the details below and hit <b>Save</b> to route 97% of each payment to this account.</span>
+                </>
+              )}
+            </div>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {FIELDS.filter((f) => f.section === section).map((f) => {
+              if (f.type === "select") {
+                return (
+                  <div key={f.key}>
+                    <label className="label" htmlFor={`st-${f.key}`}>{f.label}</label>
+                    <select
+                      id={`st-${f.key}`}
+                      className="input"
+                      value={String(form[f.key] ?? f.options?.[0]?.value ?? "")}
+                      onChange={(e) => set(f.key, e.target.value)}
+                    >
+                      {(f.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                    {f.hint && <p className="mt-1 text-[11px] text-mute">{f.hint}</p>}
+                  </div>
+                );
+              }
               if (f.type === "toggle") {
                 const on = Boolean(form[f.key]);
                 return (

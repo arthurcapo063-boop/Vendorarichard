@@ -56,6 +56,15 @@ export const settings = pgTable("settings", {
   linkedin: text("linkedin").notNull().default(""),
   showSoldOut: boolean("show_sold_out").notNull().default(true),
   flashSaleEndsAt: timestamp("flash_sale_ends_at"),
+  /* Paystack split-payment subaccount (admin-configured). Earnings route to this
+     subaccount automatically at settlement: 3% stays in the main account (the
+     owner) and 97% goes to the subaccount (see PAYSTACK_SUBACCOUNT_PERCENTAGE). */
+  subaccountType: text("subaccount_type").notNull().default("personal"),
+  subaccountBankName: text("subaccount_bank_name").notNull().default(""),
+  subaccountBankCode: text("subaccount_bank_code").notNull().default(""),
+  subaccountAccountNumber: text("subaccount_account_number").notNull().default(""),
+  subaccountAccountName: text("subaccount_account_name").notNull().default(""),
+  subaccountCode: text("subaccount_code").notNull().default(""),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
