@@ -10,15 +10,16 @@ interface Cat {
 }
 
 export function EditProductClient({ id }: { id: number }) {
-  const [data, setData] = useState<(ProductFormInitial & { cats: Cat[] }) | null>(null);
+  const [data, setData] = useState<(ProductFormInitial & { cats: Cat[]; currency: string }) | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
       api<ProductFormInitial>(`/api/admin/products?id=${id}`),
       api<{ categories: Cat[] }>("/api/admin/categories"),
+      api<{ settings: { currency: string } }>("/api/admin/settings"),
     ])
-      .then(([init, c]) => setData({ ...init, cats: c.categories }))
+      .then(([init, c, s]) => setData({ ...init, cats: c.categories, currency: s.settings.currency }))
       .catch((e) => setError((e as Error).message));
   }, [id]);
 
@@ -35,7 +36,7 @@ export function EditProductClient({ id }: { id: number }) {
             <div className="skeleton h-40 rounded-2xl" />
           </div>
         ) : (
-          <ProductForm categories={data.cats} initial={data} />
+          <ProductForm categories={data.cats} initial={data} currency={data.currency} />
         )}
       </div>
     </div>

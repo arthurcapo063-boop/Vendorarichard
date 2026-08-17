@@ -8,6 +8,7 @@ import {
   type OrderItemSnapshot,
 } from "@/db/schema";
 import { num, isSoldOut, HttpError } from "./utils";
+import { getSettings } from "./settings";
 
 export interface CartLineInput {
   productId: number;
@@ -25,6 +26,9 @@ export interface Quote {
   subtotal: number;
   feesTotal: number;
   discount: number;
+  processingFee: number;
+  processingFeePercent: number;
+  chargeProcessingFee: boolean;
   total: number;
   promoCode: string | null;
   promoError: string | null;
@@ -124,7 +128,7 @@ export async function computeQuote(
     } else if (promo.usageLimit !== null && promo.usedCount >= promo.usageLimit) {
       promoError = "That promo code has been fully redeemed.";
     } else if (subtotal < num(promo.minSubtotal)) {
-      promoError = `This code needs a subtotal of at least ₦${num(promo.minSubtotal).toLocaleString()}.`;
+      promoError = `This code needs a subtotal of at least GH₵${num(promo.minSubtotal).toLocaleString()}.`;
     } else {
       promoCode = promo.code;
       discount =
@@ -134,8 +138,27 @@ export async function computeQuote(
     }
   }
 
-  const total = Math.max(0, subtotal + feesTotal - discount);
-  return { lines, subtotal, feesTotal, discount, total, promoCode, promoError };
+  /* Processing fee (payment charge) — added to the customer's total when the
+     admin has enabled the pass-through. The % is stored in settings. */
+  const settings = await getSettings();
+  const chargeProcessingFee = settings.chargeProcessingFee;
+  const processingFeePercent = num(settings.processingFeePercent);
+  const base = subtotal + feesTotal - discount;
+  const processingFee = chargeProcessingFee ? Math.round(base * (processingFeePercent / 100)) : 0;
+
+  const total = Math.max(0, base + processingFee);
+  return {
+    lines,
+    subtotal,
+    feesTotal,
+    discount,
+    processingFee,
+    processingFeePercent,
+    chargeProcessingFee,
+    total,
+    promoCode,
+    promoError,
+  };
 }
 
 /** Reduce stock for paid items; items hitting zero become Sold Out automatically. */

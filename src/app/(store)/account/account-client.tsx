@@ -9,6 +9,7 @@ import type { OrderStatus } from "@/lib/types";
 import { useToast } from "@/components/providers";
 import { StatusPill, Spinner, EmptyState, Modal } from "@/components/ui";
 import { IInbox, IWallet, IArrowR, IPencil, IChevR } from "@/components/icons";
+import { openPaystackPopup, type PaystackPopupConfig } from "@/lib/paystack-popup";
 
 interface Me {
   id: number;
@@ -37,6 +38,7 @@ interface OrderView {
   subtotal: number;
   feesTotal: number;
   discount: number;
+  processingFee: number;
   total: number;
   promoCode: string | null;
   paymentMethod: string;
@@ -108,10 +110,22 @@ export function AccountClient({ currency, siteName }: { currency: string; siteNa
   const fundWallet = async () => {
     setFunding(true);
     try {
-      const d = await api<{ redirectUrl: string }>("/api/wallet/fund", {
+      const d = await api<{ redirectUrl: string; popup?: PaystackPopupConfig | null }>("/api/wallet/fund", {
         method: "POST",
         body: JSON.stringify({ amount: topUp }),
       });
+      if (d.popup) {
+        await openPaystackPopup(d.popup, {
+          onSuccess: (ref) => {
+            window.location.href = `/api/paystack/callback?reference=${encodeURIComponent(ref)}`;
+          },
+          onClose: () => {
+            toast("Top-up window closed — no charge was made.", "err");
+            setFunding(false);
+          },
+        });
+        return;
+      }
       if (d.redirectUrl.startsWith("http")) window.location.href = d.redirectUrl;
       else router.push(d.redirectUrl);
     } catch (e) {
@@ -234,7 +248,7 @@ export function AccountClient({ currency, siteName }: { currency: string; siteNa
                   </button>
                 ))}
               </div>
-              <label className="label mt-4" htmlFor="topup-custom">Custom amount (min ₦500)</label>
+              <label className="label mt-4" htmlFor="topup-custom">Custom amount (min {money(500, currency)})</label>
               <input id="topup-custom" type="number" min={500} step={100} className="input" value={topUp} onChange={(e) => setTopUp(parseInt(e.target.value || "0", 10))} />
               <button className="btn-brand mt-4 w-full py-3" onClick={fundWallet} disabled={funding || topUp < 500}>
                 {funding ? <Spinner className="h-5 w-5 text-brand-ink" /> : <IWallet size={17} />} Fund wallet
@@ -372,6 +386,7 @@ function OrderList({
                   <div className="flex justify-between sm:justify-start sm:gap-2"><dt className="font-bold">Subtotal:</dt><dd>{money(o.subtotal, currency)}</dd></div>
                   <div className="flex justify-between sm:justify-start sm:gap-2"><dt className="font-bold">Fees:</dt><dd>{money(o.feesTotal, currency)}</dd></div>
                   <div className="flex justify-between sm:justify-start sm:gap-2"><dt className="font-bold">Discount:</dt><dd>{o.discount > 0 ? `−${money(o.discount, currency)}${o.promoCode ? ` (${o.promoCode})` : ""}` : "—"}</dd></div>
+                  <div className="flex justify-between sm:justify-start sm:gap-2"><dt className="font-bold">Processing fee:</dt><dd>{o.processingFee > 0 ? money(o.processingFee, currency) : "—"}</dd></div>
                   <div className="flex justify-between sm:justify-start sm:gap-2"><dt className="font-bold">Reference:</dt><dd className="truncate font-mono">{o.paystackRef ?? "—"}</dd></div>
                   <div className="flex justify-between sm:col-span-2 sm:justify-start sm:gap-2"><dt className="font-bold">Deliver to:</dt><dd>{o.customerAddress} · WA: {o.customerWhatsapp}</dd></div>
                 </dl>

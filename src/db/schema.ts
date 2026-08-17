@@ -37,7 +37,7 @@ export const settings = pgTable("settings", {
   logoUrl: text("logo_url").notNull().default(""),
   primaryColor: text("primary_color").notNull().default("#FF5A1F"),
   secondaryColor: text("secondary_color").notNull().default("#0E8A76"),
-  currency: text("currency").notNull().default("NGN"),
+  currency: text("currency").notNull().default("GHS"),
   whatsappNumber: text("whatsapp_number").notNull().default("2348012345678"),
   contactEmail: text("contact_email").notNull().default("hello@vendora.shop"),
   contactPhone: text("contact_phone").notNull().default("+234 801 234 5678"),
@@ -56,6 +56,23 @@ export const settings = pgTable("settings", {
   linkedin: text("linkedin").notNull().default(""),
   showSoldOut: boolean("show_sold_out").notNull().default(true),
   flashSaleEndsAt: timestamp("flash_sale_ends_at"),
+  /* Active Paystack mode: which key pair the store uses at runtime. Toggle from
+     the Admin Panel → App Settings. "test" uses PAYSTACK_TEST_* keys, "live"
+     uses PAYSTACK_LIVE_*. */
+  paymentMode: text("payment_mode").notNull().default("test"),
+  /* Paystack split-payment subaccount (admin-configured). Earnings route to this
+     subaccount automatically at settlement: 3% stays in the main account (the
+     owner) and 97% goes to the subaccount (see PAYSTACK_SUBACCOUNT_PERCENTAGE). */
+  subaccountType: text("subaccount_type").notNull().default("personal"),
+  subaccountBankName: text("subaccount_bank_name").notNull().default(""),
+  subaccountBankCode: text("subaccount_bank_code").notNull().default(""),
+  subaccountAccountNumber: text("subaccount_account_number").notNull().default(""),
+  subaccountAccountName: text("subaccount_account_name").notNull().default(""),
+  subaccountCode: text("subaccount_code").notNull().default(""),
+  /* Processing-charge pass-through: when enabled, a processing fee (default 3%)
+     is added to the customer's checkout total. Off = the platform absorbs it. */
+  chargeProcessingFee: boolean("charge_processing_fee").notNull().default(true),
+  processingFeePercent: numeric("processing_fee_percent", { precision: 5, scale: 2 }).notNull().default("3"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
@@ -198,6 +215,7 @@ export const orders = pgTable("orders", {
   subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
   feesTotal: numeric("fees_total", { precision: 12, scale: 2 }).notNull().default("0"),
   discount: numeric("discount", { precision: 12, scale: 2 }).notNull().default("0"),
+  processingFee: numeric("processing_fee", { precision: 12, scale: 2 }).notNull().default("0"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
   promoCode: text("promo_code"),
   paymentMethod: payMethodEnum("payment_method").notNull().default("paystack"),

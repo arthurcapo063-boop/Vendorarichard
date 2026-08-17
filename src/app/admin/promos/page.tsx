@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { money } from "@/lib/utils";
+import { money, currencySymbol } from "@/lib/utils";
 import { useToast } from "@/components/providers";
 import { Modal, Spinner } from "@/components/ui";
 import { ITag, IPlus, IPencil, ITrash } from "@/components/icons";
@@ -174,15 +174,15 @@ export default function AdminPromosPage() {
               <label className="label" htmlFor="pm-type">Type</label>
               <select id="pm-type" className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
                 <option value="percent">Percent (%)</option>
-                <option value="fixed">Fixed amount (₦)</option>
+                <option value="fixed">Fixed amount ({currencySymbol(currency)})</option>
               </select>
             </div>
             <div>
-              <label className="label" htmlFor="pm-value">{form.type === "percent" ? "Percent off" : "Amount off (₦)"}</label>
+              <label className="label" htmlFor="pm-value">{form.type === "percent" ? "Percent off" : `Amount off (${currencySymbol(currency)})`}</label>
               <input id="pm-value" type="number" min={0} className="input" value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} />
             </div>
             <div>
-              <label className="label" htmlFor="pm-min">Min subtotal (₦)</label>
+              <label className="label" htmlFor="pm-min">Min subtotal ({currencySymbol(currency)})</label>
               <input id="pm-min" type="number" min={0} className="input" value={form.minSubtotal} onChange={(e) => setForm({ ...form, minSubtotal: e.target.value })} />
             </div>
             <div>

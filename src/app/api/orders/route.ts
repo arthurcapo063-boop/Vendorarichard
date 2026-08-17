@@ -26,6 +26,7 @@ export async function GET(req: Request) {
       subtotal: num(o.subtotal),
       feesTotal: num(o.feesTotal),
       discount: num(o.discount),
+      processingFee: num(o.processingFee),
       total: num(o.total),
       promoCode: o.promoCode,
       paymentMethod: o.paymentMethod,

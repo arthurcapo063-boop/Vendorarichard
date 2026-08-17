@@ -9,11 +9,15 @@ import { useCart, useToast } from "@/components/providers";
 import { EmptyState, Spinner } from "@/components/ui";
 import { ICart, IShield, IWallet, IWhatsApp, ITag } from "@/components/icons";
 import { waLink } from "@/lib/client";
+import { openPaystackPopup, type PaystackPopupConfig } from "@/lib/paystack-popup";
 
 interface QuoteView {
   subtotal: number;
   feesTotal: number;
   discount: number;
+  processingFee: number;
+  processingFeePercent: number;
+  chargeProcessingFee: boolean;
   total: number;
   promoCode: string | null;
   promoError: string | null;
@@ -100,16 +104,40 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
   const placeOrder = async () => {
     setPlacing(true);
     try {
-      const d = await api<{ redirectUrl: string; paidWithWallet?: boolean }>(
+      const d = await api<{ redirectUrl: string; paidWithWallet?: boolean; popup?: PaystackPopupConfig | null }>(
         "/api/checkout",
         {
           method: "POST",
           body: JSON.stringify({ items: payloadItems, promoCode: promo, payWith, customer: form }),
         }
       );
-      clear();
-      if (d.redirectUrl.startsWith("http")) window.location.href = d.redirectUrl;
-      else router.push(d.redirectUrl);
+      if (d.paidWithWallet) {
+        clear();
+        router.push(d.redirectUrl);
+        return;
+      }
+      /* Real payments open the Paystack inline popup — onSuccess fires in the
+         browser immediately, so the customer always lands back on the site. */
+      if (d.popup) {
+        await openPaystackPopup(d.popup, {
+          onSuccess: (ref) => {
+            clear();
+            window.location.href = `/api/paystack/callback?reference=${encodeURIComponent(ref)}`;
+          },
+          onClose: () => {
+            toast("Payment window closed — no charge was made.", "err");
+            setPlacing(false);
+          },
+        });
+        return;
+      }
+      if (d.redirectUrl.startsWith("http")) {
+        clear();
+        window.location.href = d.redirectUrl;
+      } else {
+        clear();
+        router.push(d.redirectUrl);
+      }
     } catch (e) {
       toast((e as Error).message, "err");
     } finally {
@@ -249,6 +277,12 @@ export function CheckoutClient({ currency, siteName, whatsappNumber }: { currenc
                   {q ? (q.discount > 0 ? `−${money(q.discount, currency)}` : money(0, currency)) : "…"}
                 </dd>
               </div>
+              {q?.chargeProcessingFee && (
+                <div className="flex justify-between text-mute">
+                  <dt>Processing fee ({q.processingFeePercent}%)</dt>
+                  <dd className="font-semibold text-ink">{q ? money(q.processingFee, currency) : "…"}</dd>
+                </div>
+              )}
               <div className="flex justify-between border-t border-line pt-3 text-base font-bold">
                 <dt>Total due</dt>
                 <dd className="font-display text-xl text-brand">{q ? money(q.total, currency) : "…"}</dd>

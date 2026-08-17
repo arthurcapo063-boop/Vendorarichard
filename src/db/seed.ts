@@ -532,7 +532,7 @@ async function main() {
     logoUrl: "",
     primaryColor: "#FF5A1F",
     secondaryColor: "#0E8A76",
-    currency: "NGN",
+    currency: "GHS",
     whatsappNumber: "2348012345678",
     contactEmail: "hello@vendora.shop",
     contactPhone: "+234 801 234 5678",
@@ -554,6 +554,15 @@ async function main() {
     linkedin: "",
     showSoldOut: true,
     flashSaleEndsAt: new Date(Date.now() + 1000 * 60 * 60 * 26),
+    paymentMode: "test",
+    subaccountType: "personal",
+    subaccountBankName: "",
+    subaccountBankCode: "",
+    subaccountAccountNumber: "",
+    subaccountAccountName: "",
+    subaccountCode: "",
+    chargeProcessingFee: true,
+    processingFeePercent: "3",
   });
 
   /* Users */

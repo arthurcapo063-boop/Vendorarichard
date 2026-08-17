@@ -43,6 +43,7 @@ export const IChevR = (p: P) => base(p, <path d="m9.5 5.5 6.5 6.5-6.5 6.5" />);
 export const ITrash = (p: P) =>
   base(p, <><path d="M4 7h16M9.5 7V4.8A1.3 1.3 0 0 1 10.8 3.5h2.4a1.3 1.3 0 0 1 1.3 1.3V7" /><path d="M6.5 7l.8 12.2a1.8 1.8 0 0 0 1.8 1.6h5.8a1.8 1.8 0 0 0 1.8-1.6L17.5 7" /><path d="M10 11v6M14 11v6" /></>);
 export const IPlus = (p: P) => base(p, <path d="M12 5v14M5 12h14" />);
+export const IUpload = (p: P) => base(p, <><path d="M12 15V4" /><path d="m7.5 8.5 4.5-4.5 4.5 4.5" /><path d="M4 14v4.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V14" /></>);
 export const IMinus = (p: P) => base(p, <path d="M5 12h14" />);
 export const ICheck = (p: P) => base(p, <path d="m4.5 12.5 5 5 10-11" />);
 export const IX = (p: P) => base(p, <path d="M6 6l12 12M18 6 6 18" />);

@@ -15,6 +15,13 @@ import {
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { bustSettingsCache } from "@/lib/settings";
+import {
+  paystackEnabled,
+  paystackPercentage,
+  resolvePaystackAccount,
+  resolvePaystackBank,
+  syncPaystackSubaccount,
+} from "@/lib/paystack";
 import { incrementStock } from "@/lib/pricing";
 import { err, json, HttpError, num, slugify } from "@/lib/utils";
 
@@ -175,6 +182,7 @@ export async function GET(req: Request, ctx: Ctx) {
           subtotal: num(o.subtotal),
           feesTotal: num(o.feesTotal),
           discount: num(o.discount),
+          processingFee: num(o.processingFee),
           total: num(o.total),
           promoCode: o.promoCode,
           paymentMethod: o.paymentMethod,
@@ -493,6 +501,56 @@ export async function PATCH(req: Request, ctx: Ctx) {
       if (!s) throw new HttpError(404, "Settings row missing.");
       const str = (k: string, fallback: string) => (typeof body[k] === "string" ? (body[k] as string) : fallback);
       const hex = (v: string, fallback: string) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback);
+      const nameMatches = (a: string, b: string) =>
+        a.replace(/[^a-z0-9]/gi, "").toLowerCase() === b.replace(/[^a-z0-9]/gi, "").toLowerCase();
+
+      /* ---- Paystack split-payment subaccount sync ---- */
+      const subType = str("subaccountType", s.subaccountType);
+      const subBankName = str("subaccountBankName", s.subaccountBankName).trim();
+      const subAccNo = str("subaccountAccountNumber", s.subaccountAccountNumber).trim();
+      const subAccName = str("subaccountAccountName", s.subaccountAccountName).trim();
+      let subCode = str("subaccountCode", s.subaccountCode);
+      let subBankCode = str("subaccountBankCode", s.subaccountBankCode);
+
+      const subFieldsFilled = Boolean(subBankName && subAccNo && subAccName);
+      const subChanged =
+        subBankName !== s.subaccountBankName ||
+        subAccNo !== s.subaccountAccountNumber ||
+        subAccName !== s.subaccountAccountName;
+      const subAllEmpty = !subBankName && !subAccNo && !subAccName;
+
+      if (subAllEmpty) {
+        subCode = "";
+        subBankCode = "";
+      } else if (!subFieldsFilled && subChanged) {
+        throw new HttpError(400, "Fill in the subaccount bank name, account number and account name together.");
+      } else if (subChanged) {
+        if (!(await paystackEnabled())) {
+          /* Demo mode: we can't create a real subaccount, so clear any stale code. */
+          subCode = "";
+          subBankCode = "";
+        } else {
+          const bank = await resolvePaystackBank(subBankName, "GHS");
+          if (!bank) throw new HttpError(400, `Bank "${subBankName}" was not found on Paystack (GHS). Check the bank name.`);
+          subBankCode = bank.code;
+          const resolved = await resolvePaystackAccount(subAccNo, bank.code).catch(() => null);
+          if (resolved && resolved.account_name && !nameMatches(resolved.account_name, subAccName)) {
+            throw new HttpError(
+              400,
+              `Account name mismatch: Paystack says ${subAccNo} belongs to "${resolved.account_name}". Update the account name to match.`
+            );
+          }
+          const synced = await syncPaystackSubaccount({
+            accountName: subAccName,
+            accountNumber: subAccNo,
+            bankCode: bank.code,
+            percentageCharge: paystackPercentage(),
+            existingCode: s.subaccountCode || null,
+          });
+          subCode = synced.subaccountCode;
+        }
+      }
+
       await db
         .update(settings)
         .set({
@@ -518,6 +576,15 @@ export async function PATCH(req: Request, ctx: Ctx) {
           youtube: str("youtube", s.youtube),
           linkedin: str("linkedin", s.linkedin),
           showSoldOut: Boolean(body.showSoldOut),
+          paymentMode: body.paymentMode === "live" ? "live" : "test",
+          subaccountType: subType,
+          subaccountBankName: subBankName,
+          subaccountBankCode: subBankCode,
+          subaccountAccountNumber: subAccNo,
+          subaccountAccountName: subAccName,
+          subaccountCode: subCode,
+          chargeProcessingFee: Boolean(body.chargeProcessingFee),
+          processingFeePercent: num(body.processingFeePercent) > 0 ? String(num(body.processingFeePercent)) : s.processingFeePercent,
           updatedAt: new Date(),
         })
         .where(eq(settings.id, s.id));
